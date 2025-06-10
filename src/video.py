@@ -4,8 +4,8 @@ import cv2
 
 def extract_str_frames(
   video_path: str,
-  max_frames: int=10,
-  frame_rate: int=3
+  max_frames: int = 10,
+  frame_rate: int = 3
 ) -> list[str]:
   '''
   Extracts frames from a video in base64 formatted strings.
