@@ -4,6 +4,7 @@
 # Custom ignores
 temp*
 *.pdf
+*.task
 
 # Temporary LaTeX files
 *.out
