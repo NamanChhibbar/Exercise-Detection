@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import tensorflow as tf
 from tensorflow import keras
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
@@ -84,6 +85,12 @@ class LandmarkExtractor:
 
 
 class LandmarkClassifier(keras.Model):
+  '''
+  An Energy-Based Model (EBM) for classifying sequences of pose landmarks.
+  Uses an LSTM layer followed by a feedforward network (FFN) to classify sequences of pose landmarks.
+  Uses energy thresholding to determine if an input is out-of-distribution (OOD).
+  The model outputs the class index for in-distribution inputs and -1 for OOD inputs.
+  '''
 
   def __init__(
     self,
@@ -91,33 +98,47 @@ class LandmarkClassifier(keras.Model):
     ffn_layer_sizes: list[int],
     num_classes: int,
     activation: str = 'relu',
+    temperature: float = 1.0,
+    threshold: float = 0.,
+    training: bool = False,
     **kwargs
   ):
     '''
     Parameters:
-      input_dim: Dimension of each input vector in the sequence
-      lstm_units: Number of units in the LSTM layer
-      ffn_layer_sizes: List of integers, each the size of a dense layer in the FFN
-      num_classes: Number of output classes
-      activation: Activation function to use in feedforward layers
+      lstm_units: Number of units in the LSTM layer.
+      ffn_layer_sizes: List of integers, each the size of a dense layer in the FFN.
+      num_classes: Number of output classes.
+      activation: Activation function to use in feedforward layers.
+      temperature: Temperature parameter for energy calculation.
+      threshold: Threshold for energy to determine if an input is out-of-distribution is valid.
+      training: If True, the model returns softmax probabilities instead of class indices for training, otherwise the model returns class indices or -1 for OOD inputs.
     '''
     super().__init__(**kwargs)
+    self.temperature = temperature
+    self.threshold = threshold
+    self.training = training
     # LSTM layer
     self.lstm = keras.layers.LSTM(units=lstm_units)
     # Feedforward network (list of Dense layers)
-    self.ffn = keras.Sequential(
-      [keras.layers.InputLayer(shape=(lstm_units,))] +
-      [keras.layers.Dense(units=size, activation=activation) for size in ffn_layer_sizes]
-    )
-    # Output layer (softmax for classification)
-    self.output_layer = keras.layers.Dense(units=num_classes, activation='softmax')
+    self.ffn = keras.Sequential([
+      keras.layers.Dense(units=size, activation=activation)
+      for size in ffn_layer_sizes
+    ])
+    # Output layer
+    self.output_layer = keras.layers.Dense(units=num_classes)
     # Build the layers with shape of landmark vectors
     self.build(input_shape=(None, None, 99))
 
-  def call(self, x):
+  def call(self, x: tf.Tensor):
     x = self.lstm(x)
     x = self.ffn(x)
-    return self.output_layer(x)
+    logits = self.output_layer(x)
+    if self.training:
+      return tf.nn.softmax(logits, axis=-1)
+    energy = self.energy(logits)
+    classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
+    # Set classes to -1 if energy exceeds threshold
+    return tf.where(energy > self.threshold, tf.fill(classes.shape, -1), classes)
 
   def build(self, input_shape):
     super().build(input_shape)
@@ -127,3 +148,9 @@ class LandmarkClassifier(keras.Model):
     self.ffn.build((None, self.lstm.units))
     # Build the output layer
     self.output_layer.build(self.ffn.output_shape)
+  
+  def energy(self, logits: tf.Tensor) -> tf.Tensor:
+    '''
+    Calculates energy of given logits.
+    '''
+    return -self.temperature * tf.reduce_logsumexp(logits/self.temperature, axis=-1)
