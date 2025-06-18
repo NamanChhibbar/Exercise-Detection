@@ -6,6 +6,19 @@ temp*
 *.pdf
 *.task
 
+# Pickle files
+*.pkl
+*.pickle
+
+# TensorFlow model files
+*.pb
+*.h5
+*.keras
+
+# PyTorch model files
+*.pt
+*.pth
+
 # Temporary LaTeX files
 *.out
 *.log
