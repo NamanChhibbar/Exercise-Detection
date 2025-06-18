@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from tensorflow import keras
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
@@ -80,3 +81,49 @@ class LandmarkExtractor:
       # Release the video capture object
       cap.release()
     return np.array(landmarks_list)
+
+
+class LandmarkClassifier(keras.Model):
+
+  def __init__(
+    self,
+    lstm_units: int,
+    ffn_layer_sizes: list[int],
+    num_classes: int,
+    activation: str = 'relu',
+    **kwargs
+  ):
+    '''
+    Parameters:
+      input_dim: Dimension of each input vector in the sequence
+      lstm_units: Number of units in the LSTM layer
+      ffn_layer_sizes: List of integers, each the size of a dense layer in the FFN
+      num_classes: Number of output classes
+      activation: Activation function to use in feedforward layers
+    '''
+    super().__init__(**kwargs)
+    # LSTM layer
+    self.lstm = keras.layers.LSTM(units=lstm_units)
+    # Feedforward network (list of Dense layers)
+    self.ffn = keras.Sequential(
+      [keras.layers.InputLayer(shape=(lstm_units,))] +
+      [keras.layers.Dense(units=size, activation=activation) for size in ffn_layer_sizes]
+    )
+    # Output layer (softmax for classification)
+    self.output_layer = keras.layers.Dense(units=num_classes, activation='softmax')
+    # Build the layers with shape of landmark vectors
+    self.build(input_shape=(None, None, 99))
+
+  def call(self, x):
+    x = self.lstm(x)
+    x = self.ffn(x)
+    return self.output_layer(x)
+
+  def build(self, input_shape):
+    super().build(input_shape)
+    # Build the LSTM layer
+    self.lstm.build(input_shape)
+    # Build the feedforward network
+    self.ffn.build((None, self.lstm.units))
+    # Build the output layer
+    self.output_layer.build(self.ffn.output_shape)
