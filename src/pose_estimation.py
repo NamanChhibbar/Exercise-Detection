@@ -15,13 +15,13 @@ class LandmarkExtractor:
     options (PoseLandmarkerOptions): Options for the pose landmarker.
   '''
 
-  def __init__(self, model_path: str, max_frames: int = 100, frame_rate: int = 3):
+  def __init__(self, model_path: str, frame_rate: int = 3, max_frames: int | None = None):
     '''
     Initializes the LandmarkExtractor.
 
     Parameters:
       model_path (str): Path to the mediapipe pose landmarker model.
-      max_frames (int): Maximum number of frames to extract landmarks from.
+      max_frames (int | None): Maximum number of frames to extract landmarks from. If None, all frames will be processed.
       frame_rate (int): Interval at which to extract landmarks (every nth frame).
     '''
     self.max_frames = max_frames
