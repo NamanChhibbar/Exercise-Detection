@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import cv2
 import tensorflow as tf
@@ -100,8 +102,7 @@ class LandmarkClassifier(keras.Model):
     activation: str = 'relu',
     temperature: float = 1.0,
     threshold: float = 0.,
-    training: bool = False,
-    **kwargs
+   **kwargs
   ):
     '''
     Parameters:
@@ -111,12 +112,17 @@ class LandmarkClassifier(keras.Model):
       activation: Activation function to use in feedforward layers.
       temperature: Temperature parameter for energy calculation.
       threshold: Threshold for energy to determine if an input is out-of-distribution is valid.
-      training: If True, the model returns softmax probabilities instead of class indices for training, otherwise the model returns class indices or -1 for OOD inputs.
     '''
     super().__init__(**kwargs)
-    self.temperature = temperature
-    self.threshold = threshold
-    self.training = training
+    self.model_config = {
+      'lstm_units': lstm_units,
+      'ffn_layer_sizes': ffn_layer_sizes,
+      'num_classes': num_classes,
+      'activation': activation,
+      'temperature': temperature,
+      'threshold': threshold,
+    }
+    self.training = False
     # LSTM layer
     self.lstm = keras.layers.LSTM(units=lstm_units)
     # Feedforward network (list of Dense layers)
@@ -129,17 +135,31 @@ class LandmarkClassifier(keras.Model):
     # Build the layers with shape of landmark vectors
     self.build(input_shape=(None, None, 99))
 
-  def call(self, x: tf.Tensor):
-    x = self.lstm(x)
-    x = self.ffn(x)
-    logits = self.output_layer(x)
-    if self.training:
-      return tf.nn.softmax(logits, axis=-1)
-    energy = self.energy(logits)
-    classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
-    # Set classes to -1 if energy exceeds threshold
-    return tf.where(energy > self.threshold, tf.fill(classes.shape, -1), classes)
+  def get_config(self):
+    '''
+    Returns the configuration of the model as a dictionary.
+    This is used to automatically save the model configuration while saving the model.
+    '''
+    return self.model_config
 
+  @classmethod
+  def from_config(cls, config):
+    '''
+    Creates a LandmarkClassifier instance from a configuration dictionary.
+    This is used to automatically load the model configuration while loading the model.
+    '''
+    return cls(**config)
+  
+  @staticmethod
+  def load_model(model_path: str) -> 'LandmarkClassifier':
+    '''
+    Loads a LandmarkClassifier model from a given path.
+    The model is expected to be saved in the TensorFlow SavedModel format.
+    '''
+    if not os.path.exists(model_path):
+      raise FileNotFoundError(f'Model file {model_path} does not exist.')
+    return keras.models.load_model(model_path, custom_objects={'LandmarkClassifier': LandmarkClassifier})
+  
   def build(self, input_shape):
     super().build(input_shape)
     # Build the LSTM layer
@@ -153,4 +173,17 @@ class LandmarkClassifier(keras.Model):
     '''
     Calculates energy of given logits.
     '''
-    return -self.temperature * tf.reduce_logsumexp(logits/self.temperature, axis=-1)
+    temperature = self.model_config['temperature']
+    return -temperature * tf.reduce_logsumexp(logits / temperature, axis=-1)
+
+  def call(self, x: tf.Tensor):
+    x = self.lstm(x)
+    x = self.ffn(x)
+    logits = self.output_layer(x)
+    if self.training:
+      return tf.nn.softmax(logits, axis=-1)
+    energy = self.energy(logits)
+    classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
+    # Set classes to -1 if energy exceeds threshold
+    threshold = self.model_config['threshold']
+    return tf.where(energy > threshold, tf.fill(classes.shape, -1), classes)
