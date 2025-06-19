@@ -3,7 +3,6 @@ import os
 import numpy as np
 import cv2
 import tensorflow as tf
-from tensorflow import keras
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
@@ -86,7 +85,7 @@ class LandmarkExtractor:
     return np.array(landmarks_list)
 
 
-class LandmarkClassifier(keras.Model):
+class LandmarkClassifier(tf.keras.Model):
   '''
   An Energy-Based Model (EBM) for classifying sequences of pose landmarks.
   Uses an LSTM layer followed by a feedforward network (FFN) to classify sequences of pose landmarks.
@@ -129,14 +128,14 @@ class LandmarkClassifier(keras.Model):
     }
     self._training = False
     # LSTM layer
-    self.lstm = keras.layers.LSTM(units=lstm_units)
+    self.lstm = tf.keras.layers.LSTM(units=lstm_units)
     # Feedforward network (list of Dense layers)
-    self.ffn = keras.Sequential([
-      keras.layers.Dense(units=size, activation=activation)
+    self.ffn = tf.keras.Sequential([
+      tf.keras.layers.Dense(units=size, activation=activation)
       for size in ffn_layer_sizes
     ])
     # Output layer
-    self.output_layer = keras.layers.Dense(units=num_classes)
+    self.output_layer = tf.keras.layers.Dense(units=num_classes)
     # Build the layers with shape of landmark vectors
     self.build(input_shape=(None, None, 99))
 
@@ -163,7 +162,7 @@ class LandmarkClassifier(keras.Model):
     '''
     if not os.path.exists(model_path):
       raise FileNotFoundError(f'Model file {model_path} does not exist.')
-    return keras.models.load_model(model_path, custom_objects={'LandmarkClassifier': LandmarkClassifier})
+    return tf.keras.models.load_model(model_path, custom_objects={'LandmarkClassifier': LandmarkClassifier})
   
   def build(self, input_shape):
     super().build(input_shape)
