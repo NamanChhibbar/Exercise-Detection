@@ -103,7 +103,7 @@ class LandmarkClassifier(keras.Model):
     temperature: float = 1.0,
     threshold: float = 0.,
     class_names: list[str] | None = None,
-   **kwargs
+    **kwargs
   ):
     '''
     Parameters:
@@ -113,6 +113,8 @@ class LandmarkClassifier(keras.Model):
       activation: Activation function to use in feedforward layers.
       temperature: Temperature parameter for energy calculation.
       threshold: Threshold for energy to determine if an input is out-of-distribution is valid.
+      class_names: List of class names corresponding to the output classes.
+      **kwargs: Additional keyword arguments for super class initialization.
     '''
     super().__init__(**kwargs)
     self.__config = {
@@ -122,7 +124,8 @@ class LandmarkClassifier(keras.Model):
       'activation': activation,
       'temperature': temperature,
       'threshold': threshold,
-      'class_names': class_names
+      'class_names': class_names,
+      **kwargs
     }
     self._training = False
     # LSTM layer
