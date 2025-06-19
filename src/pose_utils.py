@@ -122,7 +122,7 @@ class LandmarkClassifier(keras.Model):
       'temperature': temperature,
       'threshold': threshold,
     }
-    self.training = False
+    self._training = False
     # LSTM layer
     self.lstm = keras.layers.LSTM(units=lstm_units)
     # Feedforward network (list of Dense layers)
@@ -169,6 +169,15 @@ class LandmarkClassifier(keras.Model):
     # Build the output layer
     self.output_layer.build(self.ffn.output_shape)
   
+  def training(self, training: bool = True):
+    '''
+    Sets model to training or evaluation mode.
+
+    Parameters:
+      training (bool): If True, sets the model to training mode; otherwise, sets it to evaluation mode.
+    '''
+    self._training = training
+  
   def energy(self, logits: tf.Tensor) -> tf.Tensor:
     '''
     Calculates energy of given logits.
@@ -180,7 +189,7 @@ class LandmarkClassifier(keras.Model):
     x = self.lstm(x)
     x = self.ffn(x)
     logits = self.output_layer(x)
-    if self.training:
+    if self._training:
       return tf.nn.softmax(logits, axis=-1)
     energy = self.energy(logits)
     classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
