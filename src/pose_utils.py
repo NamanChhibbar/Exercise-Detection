@@ -102,6 +102,7 @@ class LandmarkClassifier(keras.Model):
     activation: str = 'relu',
     temperature: float = 1.0,
     threshold: float = 0.,
+    class_names: list[str] | None = None,
    **kwargs
   ):
     '''
@@ -114,13 +115,14 @@ class LandmarkClassifier(keras.Model):
       threshold: Threshold for energy to determine if an input is out-of-distribution is valid.
     '''
     super().__init__(**kwargs)
-    self.model_config = {
+    self.__config = {
       'lstm_units': lstm_units,
       'ffn_layer_sizes': ffn_layer_sizes,
       'num_classes': num_classes,
       'activation': activation,
       'temperature': temperature,
       'threshold': threshold,
+      'class_names': class_names
     }
     self._training = False
     # LSTM layer
@@ -140,7 +142,7 @@ class LandmarkClassifier(keras.Model):
     Returns the configuration of the model as a dictionary.
     This is used to automatically save the model configuration while saving the model.
     '''
-    return self.model_config
+    return self.__config
 
   @classmethod
   def from_config(cls, config):
@@ -182,7 +184,7 @@ class LandmarkClassifier(keras.Model):
     '''
     Calculates energy of given logits.
     '''
-    temperature = self.model_config['temperature']
+    temperature = self.__config['temperature']
     return -temperature * tf.reduce_logsumexp(logits / temperature, axis=-1)
 
   def call(self, x: tf.Tensor):
@@ -194,5 +196,5 @@ class LandmarkClassifier(keras.Model):
     energy = self.energy(logits)
     classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
     # Set classes to -1 if energy exceeds threshold
-    threshold = self.model_config['threshold']
+    threshold = self.__config['threshold']
     return tf.where(energy > threshold, tf.fill(classes.shape, -1), classes)
