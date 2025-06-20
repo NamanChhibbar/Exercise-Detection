@@ -35,6 +35,7 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
   Returns:
     JsonResponse: A JSON response with the detected exercise and landmarks.
   '''
+  # Accept only POST requests
   if request.method != 'POST':
     return JsonResponse({'error': 'Invalid request method'}, status=405)
   try:
@@ -58,10 +59,10 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
     class_index = classifier(tensor_input)[0]
     # Get class name
     predicted_class = class_names[class_index]
+    return JsonResponse({'predicted_class': predicted_class}, status=200)
   except json.JSONDecodeError:
     return JsonResponse({'error': 'Invalid JSON'}, status=400)
   except KeyError as e:
     return JsonResponse({'error': f'Missing key: {e}'}, status=400)
   except Exception as e:
     return JsonResponse({'error': str(e)}, status=500)
-  return JsonResponse({'predicted_class': predicted_class}, status=200)
