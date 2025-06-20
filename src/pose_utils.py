@@ -4,8 +4,29 @@ import numpy as np
 import cv2
 import tensorflow as tf
 import mediapipe as mp
+from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
+
+
+def draw_landmarks(rgb_image: np.ndarray, detection_result) -> np.ndarray:
+  pose_landmarks_list = detection_result.pose_landmarks
+  annotated_image = np.copy(rgb_image)
+  # Loop through the detected poses to visualize.
+  for pose_landmarks in pose_landmarks_list:
+    # Draw the pose landmarks.
+    pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+    pose_landmarks_proto.landmark.extend([
+      landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z)
+      for landmark in pose_landmarks
+    ])
+    mp.solutions.drawing_utils.draw_landmarks(
+      annotated_image,
+      pose_landmarks_proto,
+      mp.solutions.pose.POSE_CONNECTIONS,
+      mp.solutions.drawing_styles.get_default_pose_landmarks_style()
+    )
+  return annotated_image
 
 
 class LandmarkExtractor:
@@ -18,7 +39,12 @@ class LandmarkExtractor:
     options (PoseLandmarkerOptions): Options for the pose landmarker.
   '''
 
-  def __init__(self, model_path: str, frame_rate: int = 3, max_frames: int | None = None):
+  def __init__(
+    self,
+    model_path: str,
+    frame_rate: int = 3,
+    max_frames: int | None = None
+  ) -> None:
     '''
     Initializes the LandmarkExtractor.
 
@@ -103,7 +129,7 @@ class LandmarkClassifier(tf.keras.Model):
     threshold: float = 0.,
     class_names: list[str] | None = None,
     **kwargs
-  ):
+  ) -> None:
     '''
     Parameters:
       lstm_units: Number of units in the LSTM layer.
@@ -139,7 +165,7 @@ class LandmarkClassifier(tf.keras.Model):
     # Build the layers with shape of landmark vectors
     self.build(input_shape=(None, None, 99))
 
-  def get_config(self):
+  def get_config(self) -> dict[str, any]:
     '''
     Returns the configuration of the model as a dictionary.
     This is used to automatically save the model configuration while saving the model.
@@ -147,7 +173,7 @@ class LandmarkClassifier(tf.keras.Model):
     return self.__config
 
   @classmethod
-  def from_config(cls, config):
+  def from_config(cls, config: dict[str, any]) -> 'LandmarkClassifier':
     '''
     Creates a LandmarkClassifier instance from a configuration dictionary.
     This is used to automatically load the model configuration while loading the model.
@@ -173,7 +199,7 @@ class LandmarkClassifier(tf.keras.Model):
     # Build the output layer
     self.output_layer.build(self.ffn.output_shape)
   
-  def training(self, training: bool = True):
+  def training(self, training: bool = True) -> None:
     '''
     Sets model to training or evaluation mode.
 
@@ -189,7 +215,7 @@ class LandmarkClassifier(tf.keras.Model):
     temperature = self.__config['temperature']
     return -temperature * tf.reduce_logsumexp(logits / temperature, axis=-1)
 
-  def call(self, x: tf.Tensor):
+  def call(self, x: tf.Tensor) -> tf.Tensor:
     x = self.lstm(x)
     x = self.ffn(x)
     logits = self.output_layer(x)
