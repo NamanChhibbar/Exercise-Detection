@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import openai_request
+from .views import detect_exercise
 
 urlpatterns = [
   path('admin/', admin.site.urls),
-  path('openai/', openai_request, name='openai')
+  path('detect-exercise/', detect_exercise, name='detect-exercise')
 ]
