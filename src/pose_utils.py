@@ -60,18 +60,19 @@ class LandmarkExtractor:
       running_mode=RunningMode.VIDEO
     )
   
-  def __call__(self, video_path: str) -> np.ndarray:
+  def __call__(self, cap: cv2.VideoCapture) -> np.ndarray:
     '''
-    Extracts landmarks from a video at specified intervals.
+    Extracts pose landmarks from a video file using OpenCV VideoCapture.
 
     Parameters:
-      video_path (str): Path to the input video file.
+      cap (cv2.VideoCapture): OpenCV VideoCapture object for the video file.
     
     Returns:
-      np.ndarray: A 2D array of shape (num_frames, 99) containing the x, y, z coordinates of the landmarks.
+      np.ndarray: A 2D array of shape (num_frames, 99) containing flattened x, y, z coordinates of the landmarks.
     '''
-    # Open the video
-    cap = cv2.VideoCapture(video_path)
+    # Check if the VideoCapture object is opened
+    if not cap.isOpened():
+      raise ValueError('VideoCapture object is closed.')
     # Get frame duration in microseconds
     frame_duration = int(1_000_000 / cap.get(cv2.CAP_PROP_FPS))
     frame_timestamp = 0
