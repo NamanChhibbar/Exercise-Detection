@@ -27,7 +27,7 @@ def create_datasets(
   '''
   # Model input and output specifications
   input_spec = tf.TensorSpec(shape=(None, 99), dtype=tf.float32)
-  output_spec = tf.TensorSpec(shape=(), dtype=tf.int64)
+  output_spec = tf.TensorSpec(shape=(), dtype=tf.int32)
   # Split into train + validation and test
   x_trainval, x_test, y_trainval, y_test = train_test_split(
     x, y,
