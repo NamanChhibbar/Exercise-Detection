@@ -27,7 +27,7 @@ def video_capture_from_bytes(video_bytes: bytes) -> cv2.VideoCapture:
 class S3Connection:
   '''
   A class to handle connections to AWS S3 for video file retrieval.
-  
+
   Attributes:
     s3 (boto3.client): The S3 client for interacting with AWS S3.
   '''
@@ -43,7 +43,7 @@ class S3Connection:
       aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
       region_name=os.getenv('AWS_DEFAULT_REGION')
     )
-  
+
   def fetch_video(self, bucket: str, key: str) -> bytes:
     '''
     Fetch a video file from S3.

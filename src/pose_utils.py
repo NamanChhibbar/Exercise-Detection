@@ -59,14 +59,14 @@ class LandmarkExtractor:
       base_options=BaseOptions(model_asset_path=model_path),
       running_mode=RunningMode.VIDEO
     )
-  
+
   def __call__(self, cap: cv2.VideoCapture) -> np.ndarray:
     '''
     Extracts pose landmarks from a video file using OpenCV VideoCapture.
 
     Parameters:
       cap (cv2.VideoCapture): OpenCV VideoCapture object for the video file.
-    
+
     Returns:
       np.ndarray: A 2D array of shape (num_frames, 99) containing flattened x, y, z coordinates of the landmarks.
     '''
@@ -180,7 +180,7 @@ class LandmarkClassifier(tf.keras.Model):
     This is used to automatically load the model configuration while loading the model.
     '''
     return cls(**config)
-  
+
   @staticmethod
   def load_model(model_path: str) -> 'LandmarkClassifier':
     '''
@@ -190,7 +190,7 @@ class LandmarkClassifier(tf.keras.Model):
     if not os.path.exists(model_path):
       raise FileNotFoundError(f'Model file {model_path} does not exist.')
     return tf.keras.models.load_model(model_path, custom_objects={'LandmarkClassifier': LandmarkClassifier})
-  
+
   def build(self, input_shape):
     super().build(input_shape)
     # Build the LSTM layer
@@ -199,7 +199,7 @@ class LandmarkClassifier(tf.keras.Model):
     self.ffn.build((None, self.lstm.units))
     # Build the output layer
     self.output_layer.build(self.ffn.output_shape)
-  
+
   def training(self, training: bool = True) -> None:
     '''
     Sets model to training or evaluation mode.
@@ -208,7 +208,7 @@ class LandmarkClassifier(tf.keras.Model):
       training (bool): If True, sets the model to training mode; otherwise, sets it to evaluation mode.
     '''
     self._training = training
-  
+
   def energy(self, logits: tf.Tensor) -> tf.Tensor:
     '''
     Calculates energy of given logits.
