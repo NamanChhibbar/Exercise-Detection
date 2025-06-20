@@ -209,6 +209,16 @@ class LandmarkClassifier(tf.keras.Model):
     '''
     self._training = training
 
+  def set_temperature(self, temperature: float) -> None:
+    '''
+    Sets the temperature for energy calculation.
+    Warning: This will affect the energy calculation and you may need to call `set_threshold` again.
+
+    Parameters:
+      temperature (float): The temperature value to set.
+    '''
+    self.__config['temperature'] = temperature
+
   def energy(self, logits: tf.Tensor) -> tf.Tensor:
     '''
     Calculates energy of given logits.
@@ -216,12 +226,39 @@ class LandmarkClassifier(tf.keras.Model):
     temperature = self.__config['temperature']
     return -temperature * tf.reduce_logsumexp(logits / temperature, axis=-1)
 
-  def call(self, x: tf.Tensor) -> tf.Tensor:
+  def set_threshold(
+    self,
+    data: list[tf.Tensor | np.ndarray],
+    rejection_rate: float = .05
+  ) -> float:
+    '''
+    Sets the energy threshold for out-of-distribution detection from the given in-distribution data.
+
+    Parameters:
+      data (list[tf.Tensor]): A dataset containing samples to compute the threshold.
+      rejection_rate (float = 0.05): The proportion of samples to reject as out-of-distribution.
+    '''
+    # Calculate energies for the given data
+    energies = []
+    for sample in data:
+      # Convert sample to tensor if it's not already
+      tensor_input = tf.convert_to_tensor(sample, dtype=tf.float32)[tf.newaxis, ...]
+      # Get logits
+      logits = self(tensor_input, return_logits=True)
+      # Calculate energy and append to the list
+      energy = self.energy(logits)[0].numpy()
+      energies.append(energy)
+    # Calculate the threshold based on the rejection rate
+    threshold = np.quantile(energies, 1 - rejection_rate)
+    self.__config['threshold'] = threshold
+    return threshold
+
+  def call(self, x: tf.Tensor, return_logits: bool=False) -> tf.Tensor:
     x = self.lstm(x)
     x = self.ffn(x)
     logits = self.output_layer(x)
-    if self._training:
-      return tf.nn.softmax(logits, axis=-1)
+    if return_logits: return logits
+    if self._training: return tf.nn.softmax(logits, axis=-1)
     energy = self.energy(logits)
     classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
     # Set classes to -1 if energy exceeds threshold
