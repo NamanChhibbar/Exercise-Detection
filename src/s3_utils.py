@@ -37,7 +37,7 @@ class S3Connection:
     Initializes the S3Connection by creating a boto3 S3 client using credentials from environment variables.
     Must have AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION set in the environment.
     '''
-    self.s3 = boto3.client(
+    self.s3_client = boto3.client(
       's3',
       aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
       aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
@@ -55,5 +55,5 @@ class S3Connection:
     Returns:
       bytes: Raw bytes of the video file.
     '''
-    response = self.s3.get_object(Bucket=bucket, Key=key)
+    response = self.s3_client.get_object(Bucket=bucket, Key=key)
     return response['Body'].read()

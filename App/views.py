@@ -44,9 +44,9 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
     if type(data) is not dict:
       return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     bucket = data['bucket']
-    video_key = data['video_key']
+    key = data['key']
     # Get video bytes from S3
-    video_bytes = s3_connection.fetch_video(bucket, video_key)
+    video_bytes = s3_connection.fetch_video(bucket, key)
     if not video_bytes:
       return JsonResponse({'error': 'Video file not found'}, status=404)
     # Create a VideoCapture object from the video bytes
