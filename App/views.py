@@ -1,6 +1,6 @@
 import json
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 import tensorflow as tf
 from botocore.exceptions import ClientError
 from django.http import HttpRequest, JsonResponse
