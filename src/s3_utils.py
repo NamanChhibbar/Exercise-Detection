@@ -35,13 +35,13 @@ class S3Connection:
   def __init__(self) -> None:
     '''
     Initializes the S3Connection by creating a boto3 S3 client using credentials from environment variables.
-    Must have AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION set in the environment.
+    Must have AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION_NAME set in the environment.
     '''
     self.s3_client = boto3.client(
       's3',
       aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
       aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-      region_name=os.getenv('AWS_DEFAULT_REGION')
+      region_name=os.getenv('AWS_REGION_NAME')
     )
 
   def fetch_video(self, bucket: str, key: str) -> bytes:
