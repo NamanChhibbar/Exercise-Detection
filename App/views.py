@@ -65,4 +65,7 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
   except KeyError as e:
     return JsonResponse({'error': f'Missing key: {e}'}, status=400)
   except Exception as e:
-    return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse(
+      {'error': str(e), 'type': f'{type(e).__module__}.{type(e).__name__}'},
+      status=500
+    )
