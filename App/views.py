@@ -2,6 +2,7 @@ import json
 from dotenv import load_dotenv
 
 import tensorflow as tf
+from botocore.exceptions import ClientError
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -42,7 +43,7 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
     # Get video file info from the request body
     data = json.loads(request.body)
     if type(data) is not dict:
-      return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+      return JsonResponse({'error': 'Invalid JSON'}, status=400)
     bucket = data['bucket']
     key = data['key']
     # Get video bytes from S3
@@ -64,6 +65,20 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
     return JsonResponse({'error': 'Invalid JSON'}, status=400)
   except KeyError as e:
     return JsonResponse({'error': f'Missing key: {e}'}, status=400)
+  except ClientError as e:
+    # Handle S3 specific errors
+    match e.response['Error']['Code']:
+      case 'NoSuchBucket':
+        return JsonResponse({'error': 'Bucket does not exist'}, status=404)
+      case 'NoSuchKey':
+        return JsonResponse({'error': 'Video file does not exist'}, status=404)
+      case 'AccessDenied':
+        return JsonResponse({'error': 'Access denied to the bucket or key'}, status=403)
+      case _:
+        return JsonResponse(
+          {'error': str(e), 'type': f'{type(e).__module__}.{type(e).__name__}'},
+          status=500
+        )
   except Exception as e:
     return JsonResponse(
       {'error': str(e), 'type': f'{type(e).__module__}.{type(e).__name__}'},
