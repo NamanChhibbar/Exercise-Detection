@@ -122,19 +122,19 @@ class LandmarkClassifier(tf.keras.Model):
 
   def __init__(
     self,
-    lstm_units: int,
+    stacked_lstm_units: list[int],
     ffn_layer_sizes: list[int],
     num_classes: int,
     activation: str = 'relu',
-    temperature: float = 1.0,
+    temperature: float = 1.,
     threshold: float = 0.,
     class_names: list[str] | None = None,
     **kwargs
   ) -> None:
     '''
     Parameters:
-      lstm_units: Number of units in the LSTM layer.
-      ffn_layer_sizes: List of integers, each the size of a dense layer in the FFN.
+      stacked_lstm_units: List of integers containing the number of units in the stacked LSTM layer.
+      ffn_layer_sizes: List of integers containing the sizes of dense layers in the FFN.
       num_classes: Number of output classes.
       activation: Activation function to use in feedforward layers.
       temperature: Temperature parameter for energy calculation.
@@ -144,7 +144,7 @@ class LandmarkClassifier(tf.keras.Model):
     '''
     super().__init__(**kwargs)
     self.__config = {
-      'lstm_units': lstm_units,
+      'stacked_lstm_units': stacked_lstm_units,
       'ffn_layer_sizes': ffn_layer_sizes,
       'num_classes': num_classes,
       'activation': activation,
@@ -154,8 +154,13 @@ class LandmarkClassifier(tf.keras.Model):
       **kwargs
     }
     self._training = False
-    # LSTM layer
-    self.lstm = tf.keras.layers.LSTM(units=lstm_units)
+    # Stacked LSTM layer
+    self.stacked_lstm = tf.keras.Sequential([
+      tf.keras.layers.LSTM(units=size, return_sequences=True)
+      for size in stacked_lstm_units[:-1]
+    ])
+    # Last LSTM layer without return sequences
+    self.stacked_lstm.add(tf.keras.layers.LSTM(units=stacked_lstm_units[-1], return_sequences=False))
     # Feedforward network (list of Dense layers)
     self.ffn = tf.keras.Sequential([
       tf.keras.layers.Dense(units=size, activation=activation)
@@ -194,9 +199,9 @@ class LandmarkClassifier(tf.keras.Model):
   def build(self, input_shape):
     super().build(input_shape)
     # Build the LSTM layer
-    self.lstm.build(input_shape)
+    self.stacked_lstm.build(input_shape)
     # Build the feedforward network
-    self.ffn.build((None, self.lstm.units))
+    self.ffn.build(self.stacked_lstm.output_shape)
     # Build the output layer
     self.output_layer.build(self.ffn.output_shape)
 
@@ -254,7 +259,7 @@ class LandmarkClassifier(tf.keras.Model):
     return threshold
 
   def call(self, x: tf.Tensor, return_logits: bool=False) -> tf.Tensor:
-    x = self.lstm(x)
+    x = self.stacked_lstm(x)
     x = self.ffn(x)
     logits = self.output_layer(x)
     if return_logits: return logits
