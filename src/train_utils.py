@@ -68,7 +68,6 @@ def train_evaluate(
 ) -> tuple[dict, float, float]:
   '''
   Trains and evaluates the given model on the provided datasets.
-  Saves the best model during training based on validation loss.
 
   Parameters:
     model (LandmarkClassifier): The model to train.
