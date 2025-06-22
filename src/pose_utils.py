@@ -169,7 +169,10 @@ class LandmarkClassifier(tf.keras.Model):
     # Output layer
     self.output_layer = tf.keras.layers.Dense(units=num_classes)
     # Build the layers with shape of landmark vectors
-    self.build(input_shape=(None, None, 99))
+    super().build((None, None, 99))
+    self.stacked_lstm.build((None, None, 99))
+    self.ffn.build(self.stacked_lstm.output_shape)
+    self.output_layer.build(self.ffn.output_shape)
 
   def get_config(self) -> dict[str, any]:
     '''
@@ -195,15 +198,6 @@ class LandmarkClassifier(tf.keras.Model):
     if not os.path.exists(model_path):
       raise FileNotFoundError(f'Model file {model_path} does not exist.')
     return tf.keras.models.load_model(model_path, custom_objects={'LandmarkClassifier': LandmarkClassifier})
-
-  def build(self, input_shape):
-    super().build(input_shape)
-    # Build the LSTM layer
-    self.stacked_lstm.build(input_shape)
-    # Build the feedforward network
-    self.ffn.build(self.stacked_lstm.output_shape)
-    # Build the output layer
-    self.output_layer.build(self.ffn.output_shape)
 
   def training(self, training: bool = True) -> None:
     '''
