@@ -78,7 +78,7 @@ def train_evaluate(
     test_ds (tf.data.Dataset): Test dataset.
     epochs (int): Number of epochs to train for.
     learning_rate (float): Learning rate for the optimizer.
-    model_path (str): Path to save the trained model. Must be of type ".keras".
+    save_path (str): Path to save the trained model. Must be of type ".keras".
 
   Returns:
     tuple: history, test_loss, test_accuracy
