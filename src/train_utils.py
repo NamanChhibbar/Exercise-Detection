@@ -65,7 +65,7 @@ def train_evaluate(
   test_ds: tf.data.Dataset,
   epochs: int = 10,
   learning_rate: float = 0.001,
-  model_path: str = 'classifier.keras'
+  save_path: str = 'classifier.keras'
 ) -> tuple[dict, float, float]:
   '''
   Trains and evaluates the given model on the provided datasets.
@@ -102,7 +102,7 @@ def train_evaluate(
       # Early stopping to prevent overfitting
       tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True),
       # Model checkpoint to save the best model
-      tf.keras.callbacks.ModelCheckpoint(filepath=model_path, save_best_only=True, monitor='val_loss')
+      tf.keras.callbacks.ModelCheckpoint(filepath=save_path, save_best_only=True, monitor='val_loss')
     ]
   )
   # Evaluate the model on the test dataset
