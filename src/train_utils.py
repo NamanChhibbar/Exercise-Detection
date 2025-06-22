@@ -64,8 +64,7 @@ def train_evaluate(
   val_ds: tf.data.Dataset,
   test_ds: tf.data.Dataset,
   epochs: int = 10,
-  learning_rate: float = 0.001,
-  save_path: str = 'classifier.keras'
+  learning_rate: float = 0.001
 ) -> tuple[dict, float, float]:
   '''
   Trains and evaluates the given model on the provided datasets.
@@ -78,7 +77,6 @@ def train_evaluate(
     test_ds (tf.data.Dataset): Test dataset.
     epochs (int): Number of epochs to train for.
     learning_rate (float): Learning rate for the optimizer.
-    save_path (str): Path to save the trained model. Must be of type ".keras".
 
   Returns:
     tuple: history, test_loss, test_accuracy
@@ -100,9 +98,7 @@ def train_evaluate(
       # Reduce learning rate on plateau scheduler
       tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2),
       # Early stopping to prevent overfitting
-      tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True),
-      # Model checkpoint to save the best model
-      tf.keras.callbacks.ModelCheckpoint(filepath=save_path, save_best_only=True, monitor='val_loss')
+      tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
     ]
   )
   # Evaluate the model on the test dataset
