@@ -19,6 +19,9 @@ temp*
 *.pt
 *.pth
 
+# NumPy files
+*.npy
+
 # Temporary LaTeX files
 *.out
 *.log
