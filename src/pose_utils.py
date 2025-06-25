@@ -127,7 +127,7 @@ class LandmarkClassifier(tf.keras.Model):
     num_classes: int,
     activation: str = 'relu',
     temperature: float = 1.,
-    threshold: float = 0.,
+    threshold: float = float('inf'),
     class_names: list[str] | None = None,
     **kwargs
   ) -> None:
