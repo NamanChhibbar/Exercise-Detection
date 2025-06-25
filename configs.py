@@ -1,6 +1,6 @@
 # Mediapipe Pose Landmarker path and configuration
 POSE_LANDMARKER_PATH = 'pose_landmarker_full.task'
-POSE_LANDMARKER_FRAME_RATE = 3
+POSE_LANDMARKER_SAMPLE_RATE = 3
 POSE_LANDMARKER_MAX_FRAMES = 200
 
 # Landmark Classifier path

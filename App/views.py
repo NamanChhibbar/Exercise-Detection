@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from src.pose_utils import LandmarkExtractor, LandmarkClassifier
 from src.s3_utils import video_capture_from_bytes, S3Connection
 from configs import (
-  POSE_LANDMARKER_PATH, POSE_LANDMARKER_FRAME_RATE, POSE_LANDMARKER_MAX_FRAMES,
+  POSE_LANDMARKER_PATH, POSE_LANDMARKER_SAMPLE_RATE, POSE_LANDMARKER_MAX_FRAMES,
   LANDMARK_CLASSIFIER_PATH
 )
 
@@ -18,7 +18,7 @@ load_dotenv()
 s3_connection = S3Connection()
 extractor = LandmarkExtractor(
   model_path=POSE_LANDMARKER_PATH,
-  frame_rate=POSE_LANDMARKER_FRAME_RATE,
+  sample_rate=POSE_LANDMARKER_SAMPLE_RATE,
   max_frames=POSE_LANDMARKER_MAX_FRAMES
 )
 classifier = LandmarkClassifier.load_model(model_path=LANDMARK_CLASSIFIER_PATH)

@@ -34,15 +34,15 @@ class LandmarkExtractor:
   Extracts pose landmarks from a video file at specified intervals.
 
   Attributes:
-    max_frames (int): Maximum number of frames to extract landmarks from.
-    frame_rate (int): Interval at which to extract landmarks (every nth frame).
+    sample_rate (int): Rate at which to sample frames to extract landmarks.
+    max_frames (int | None): Maximum number of frames to extract landmarks from. If None, all frames will be processed.
     options (PoseLandmarkerOptions): Options for the pose landmarker.
   '''
 
   def __init__(
     self,
     model_path: str,
-    frame_rate: int = 3,
+    sample_rate: int = 3,
     max_frames: int | None = None
   ) -> None:
     '''
@@ -50,11 +50,11 @@ class LandmarkExtractor:
 
     Parameters:
       model_path (str): Path to the mediapipe pose landmarker model.
+      sample_rate (int): Rate at which to sample frames to extract landmarks.
       max_frames (int | None): Maximum number of frames to extract landmarks from. If None, all frames will be processed.
-      frame_rate (int): Interval at which to extract landmarks (every nth frame).
     '''
     self.max_frames = max_frames
-    self.frame_rate = frame_rate
+    self.sample_rate = sample_rate
     self.options = PoseLandmarkerOptions(
       base_options=BaseOptions(model_asset_path=model_path),
       running_mode=RunningMode.VIDEO
@@ -88,7 +88,7 @@ class LandmarkExtractor:
           break
         frame_count += 1
         # Extract landmarks at specified frame rate
-        if frame_count % self.frame_rate == 0:
+        if frame_count % self.sample_rate == 0:
           # Convert the frame to RGB format
           mp_frame = mp.Image(
             image_format=mp.ImageFormat.SRGB,
