@@ -17,6 +17,7 @@ class SequenceClassifier(tf.keras.Model):
     stacked_lstm_units: list[int],
     ffn_layer_sizes: list[int],
     num_classes: int,
+    sequence_length: int,
     activation: str = 'relu',
     temperature: float = 1.,
     threshold: float = float('inf'),
@@ -28,6 +29,7 @@ class SequenceClassifier(tf.keras.Model):
       stacked_lstm_units (list[int]): List of integers containing the number of units in the stacked LSTM layer.
       ffn_layer_sizes (list[int]): List of integers containing the sizes of dense layers in the FFN.
       num_classes (int): Number of output classes.
+      sequence_length (int): Length of the input sequences.
       activation (str = 'relu'): Activation function to use in feedforward layers.
       temperature (float = 1.0): Temperature parameter for energy calculation.
       threshold (float = inf): Threshold for energy to determine if an input is out-of-distribution is valid.
@@ -39,6 +41,7 @@ class SequenceClassifier(tf.keras.Model):
       'stacked_lstm_units': stacked_lstm_units,
       'ffn_layer_sizes': ffn_layer_sizes,
       'num_classes': num_classes,
+      'sequence_length': sequence_length,
       'activation': activation,
       'temperature': temperature,
       'threshold': threshold,
@@ -61,8 +64,8 @@ class SequenceClassifier(tf.keras.Model):
     # Output layer
     self.output_layer = tf.keras.layers.Dense(units=num_classes)
     # Build the layers with shape of landmark vectors
-    super().build((None, None, 99))
-    self.stacked_lstm.build((None, None, 99))
+    super().build((None, None, sequence_length))
+    self.stacked_lstm.build((None, None, sequence_length))
     self.ffn.build(self.stacked_lstm.output_shape)
     self.output_layer.build(self.ffn.output_shape)
 

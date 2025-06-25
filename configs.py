@@ -5,3 +5,6 @@ POSE_LANDMARKER_MAX_FRAMES = 200
 
 # Landmark Classifier path
 LANDMARK_CLASSIFIER_PATH = 'classifier.keras'
+
+# Sequence lenght for classifier (DO NOT CHANGE)
+CLASSIFIER_SEQUENCE_LENGTH = 99

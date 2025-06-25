@@ -3,6 +3,7 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 from .classifier import SequenceClassifier
+from configs import CLASSIFIER_SEQUENCE_LENGTH
 
 
 def create_datasets(
@@ -26,7 +27,7 @@ def create_datasets(
     tuple: train_ds, val_ds, test_ds
   '''
   # Model input and output specifications
-  input_spec = tf.TensorSpec(shape=(None, 99), dtype=tf.float32)
+  input_spec = tf.TensorSpec(shape=(None, CLASSIFIER_SEQUENCE_LENGTH), dtype=tf.float32)
   output_spec = tf.TensorSpec(shape=(), dtype=tf.int32)
   # Split into train + validation and test
   x_trainval, x_test, y_trainval, y_test = train_test_split(
