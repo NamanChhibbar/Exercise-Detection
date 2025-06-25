@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from .pose_utils import LandmarkClassifier
+from .classifier import SequenceClassifier
 
 
 def create_datasets(
@@ -59,7 +59,7 @@ def create_datasets(
 
 
 def train_evaluate(
-  model: LandmarkClassifier,
+  model: SequenceClassifier,
   train_ds: tf.data.Dataset,
   val_ds: tf.data.Dataset,
   test_ds: tf.data.Dataset,
