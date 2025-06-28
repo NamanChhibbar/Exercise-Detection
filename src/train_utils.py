@@ -3,14 +3,13 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 from .classifier import SequenceClassifier
-from configs import CLASSIFIER_SEQUENCE_LENGTH
 
 
 def create_datasets(
   x: list[np.ndarray],
   y: list[int],
-  test_size: float = .2,
-  val_size: float = .2,
+  test_size: float = 0.2,
+  val_size: float = 0.2,
   seed: int | None = None
   ) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
   '''
@@ -27,7 +26,7 @@ def create_datasets(
     tuple: train_ds, val_ds, test_ds
   '''
   # Model input and output specifications
-  input_spec = tf.TensorSpec(shape=(None, CLASSIFIER_SEQUENCE_LENGTH), dtype=tf.float32)
+  input_spec = tf.TensorSpec(shape=(None, x[0].shape[-1]), dtype=tf.float32)
   output_spec = tf.TensorSpec(shape=(), dtype=tf.int32)
   # Split into train + validation and test
   x_trainval, x_test, y_trainval, y_test = train_test_split(
@@ -64,8 +63,11 @@ def train_evaluate(
   train_ds: tf.data.Dataset,
   val_ds: tf.data.Dataset,
   test_ds: tf.data.Dataset,
-  epochs: int = 10,
-  learning_rate: float = 0.001
+  epochs: int = 20,
+  learning_rate: float = 1e-3,
+  scheduler_factor: float = 0.5,
+  scheduler_patience: int = 3,
+  early_stopping_patience: int = 5
 ) -> tuple[dict, float, float]:
   '''
   Trains and evaluates the given model on the provided datasets.
@@ -81,8 +83,6 @@ def train_evaluate(
   Returns:
     tuple: history, test_loss, test_accuracy
   '''
-  # Set the model to training mode
-  model.training(True)
   # Compile the model with optimizer, loss function, and metrics
   model.compile(
     optimizer=tf.keras.optimizers.AdamW(learning_rate=learning_rate),
@@ -96,13 +96,19 @@ def train_evaluate(
     epochs=epochs,
     callbacks=[
       # Reduce learning rate on plateau scheduler
-      tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2),
+      tf.keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=scheduler_factor,
+        patience=scheduler_patience
+      ),
       # Early stopping to prevent overfitting
-      tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+      tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=early_stopping_patience,
+        restore_best_weights=True
+      )
     ]
   )
   # Evaluate the model on the test dataset
   test_loss, test_accuracy = model.evaluate(test_ds)
-  # Set the model back to inference mode
-  model.training(False)
   return history.history, test_loss, test_accuracy

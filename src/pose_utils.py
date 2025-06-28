@@ -6,6 +6,20 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
 
 
+def normalize_flatten_landmarks(landmarks: np.ndarray) -> np.ndarray:
+  '''
+  Normalizes landmarks about the nose and flattens them to make them suitable for input to a classifier.
+
+  Parameters:
+    landmarks (np.ndarray): Array of shape (num_frames, 33, 3) containing 33 pairs (including nose landmarks) of (x, y, z) coordinates of the landmarks.
+
+  Returns:
+    np.ndarray: Normalized landmarks of shape (num_frames, 32, 3).
+  '''
+  # Normalize landmarks about the nose and remove the nose landmark
+  normalized = landmarks[:, 1:] - landmarks[:, 0][:, np.newaxis]
+  return normalized
+
 def draw_landmarks(rgb_image: np.ndarray, detection_result) -> np.ndarray:
   pose_landmarks_list = detection_result.pose_landmarks
   annotated_image = np.copy(rgb_image)
@@ -28,7 +42,7 @@ def draw_landmarks(rgb_image: np.ndarray, detection_result) -> np.ndarray:
 
 class LandmarkExtractor:
   '''
-  Extracts pose landmarks from a video file at specified intervals.
+  Extracts pose landmarks from a video file at the specified rate.
 
   Attributes:
     sample_rate (int): Rate at which to sample frames to extract landmarks.
@@ -57,7 +71,7 @@ class LandmarkExtractor:
       running_mode=RunningMode.VIDEO
     )
 
-  def __call__(self, cap: cv2.VideoCapture) -> np.ndarray:
+  def extract(self, cap: cv2.VideoCapture) -> np.ndarray:
     '''
     Extracts pose landmarks from a video file using OpenCV VideoCapture.
 
@@ -65,7 +79,7 @@ class LandmarkExtractor:
       cap (cv2.VideoCapture): OpenCV VideoCapture object for the video file.
 
     Returns:
-      np.ndarray: A 2D array of shape (num_frames, 99) containing flattened x, y, z coordinates of the landmarks.
+      np.ndarray: A 3D array of shape (num_frames, 33, 3) containing x, y, z coordinates of the landmarks.
     '''
     # Check if the VideoCapture object is opened
     if not cap.isOpened():
@@ -99,7 +113,7 @@ class LandmarkExtractor:
             landmarks = np.array([
               [landmark.x, landmark.y, landmark.z]
               for landmark in results.pose_landmarks[0]
-            ]).flatten()
+            ])
             landmarks_list.append(landmarks)
             frames_extracted += 1
         frame_timestamp += frame_duration

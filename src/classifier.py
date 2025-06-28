@@ -19,7 +19,7 @@ class SequenceClassifier(tf.keras.Model):
     num_classes: int,
     sequence_length: int,
     activation: str = 'relu',
-    temperature: float = 1.,
+    temperature: float = 1.0,
     threshold: float = float('inf'),
     class_names: list[str] | None = None,
     **kwargs
@@ -37,6 +37,12 @@ class SequenceClassifier(tf.keras.Model):
       **kwargs: Additional keyword arguments for super class initialization.
     '''
     super().__init__(**kwargs)
+    if class_names is not None:
+      # Check if length class_names matches num_classes
+      if len(class_names) != num_classes:
+        raise ValueError(f'Number of class names ({len(class_names)}) does not match number of classes ({num_classes}).')
+      # Add 'Other' to class names for out-of-distribution detection
+      class_names.append('Other')
     self.__config = {
       'stacked_lstm_units': stacked_lstm_units,
       'ffn_layer_sizes': ffn_layer_sizes,
@@ -48,7 +54,6 @@ class SequenceClassifier(tf.keras.Model):
       'class_names': class_names,
       **kwargs
     }
-    self._training = False
     # Stacked LSTM layer
     self.stacked_lstm = tf.keras.Sequential([
       tf.keras.layers.LSTM(units=size, return_sequences=True)
@@ -94,15 +99,6 @@ class SequenceClassifier(tf.keras.Model):
       raise FileNotFoundError(f'Model file {model_path} does not exist.')
     return tf.keras.models.load_model(model_path, custom_objects={'SequenceClassifier': SequenceClassifier})
 
-  def training(self, training: bool = True) -> None:
-    '''
-    Sets model to training or evaluation mode.
-
-    Parameters:
-      training (bool): If True, sets the model to training mode; otherwise, sets it to evaluation mode.
-    '''
-    self._training = training
-
   def set_temperature(self, temperature: float) -> None:
     '''
     Sets the temperature for energy calculation.
@@ -123,7 +119,7 @@ class SequenceClassifier(tf.keras.Model):
   def set_threshold(
     self,
     data: list[tf.Tensor | np.ndarray],
-    rejection_rate: float = .05
+    rejection_rate: float = 0.05
   ) -> float:
     '''
     Sets the energy threshold for out-of-distribution detection from the given in-distribution data.
@@ -147,14 +143,42 @@ class SequenceClassifier(tf.keras.Model):
     self.__config['threshold'] = threshold
     return threshold
 
-  def call(self, x: tf.Tensor, return_logits: bool=False) -> tf.Tensor:
+  def call(self, x: tf.Tensor, return_logits: bool = False) -> tf.Tensor:
+    '''
+    Forward pass of the model.
+    
+    Parameters:
+      x (tf.Tensor): Input tensor of shape (batch_size, sequence_length, num_features).
+      return_logits (bool): If True, returns logits instead of softmax probabilities.
+    Returns:
+      tf.Tensor: Output tensor of shape (batch_size, num_classes) containing class probabilities or logits.
+    '''
     x = self.stacked_lstm(x)
     x = self.ffn(x)
     logits = self.output_layer(x)
-    if return_logits: return logits
-    if self._training: return tf.nn.softmax(logits, axis=-1)
-    energy = self.energy(logits)
+    if return_logits:
+      return logits
+    return tf.nn.softmax(logits, axis=-1)
+  
+  def predict(self, x: tf.Tensor) -> list[int] | list[str]:
+    '''
+    Predicts the class index (or class name if class_names is not None) for the given input sequence.
+    If the input is out-of-distribution, it returns -1 (or "Other" if class_names is not None).
+
+    Parameters:
+      x (tf.Tensor): Input tensor of shape (batch_size, sequence_length, num_features).
+
+    Returns:
+      (list[int] | list[str]): Predicted class indices or class names.
+    '''
+    logits = self.call(x, return_logits=True)
+    energies = self.energy(logits)
     classes = tf.argmax(logits, axis=-1, output_type=tf.int32)
     # Set classes to -1 if energy exceeds threshold
     threshold = self.__config['threshold']
-    return tf.where(energy > threshold, tf.fill(classes.shape, -1), classes)
+    classes = tf.where(energies > threshold, -1, classes)
+    class_names = self.__config.get('class_names')
+    if class_names is not None:
+      # Convert class indices to class names
+      return [class_names[i] for i in classes]
+    return classes.numpy().tolist()
