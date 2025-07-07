@@ -37,12 +37,6 @@ class SequenceClassifier(tf.keras.Model):
       **kwargs: Additional keyword arguments for super class initialization.
     '''
     super().__init__(**kwargs)
-    if class_names is not None:
-      # Check if length class_names matches num_classes
-      if len(class_names) != num_classes:
-        raise ValueError(f'Number of class names ({len(class_names)}) does not match number of classes ({num_classes}).')
-      # Add 'Other' to class names for out-of-distribution detection
-      class_names.append('Other')
     self.__config = {
       'stacked_lstm_units': stacked_lstm_units,
       'ffn_layer_sizes': ffn_layer_sizes,
@@ -54,6 +48,12 @@ class SequenceClassifier(tf.keras.Model):
       'class_names': class_names,
       **kwargs
     }
+    if class_names is not None:
+      # Check if length class_names matches num_classes
+      if len(class_names) != num_classes:
+        raise ValueError(f'Number of class names ({len(class_names)}) does not match number of classes ({num_classes}).')
+      # Add 'Other' to class names for out-of-distribution detection
+      class_names.append('Other')
     # Stacked LSTM layer
     self.stacked_lstm = tf.keras.Sequential([
       tf.keras.layers.LSTM(units=size, return_sequences=True)
