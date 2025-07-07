@@ -5,4 +5,4 @@ POSE_LANDMARKER_SAMPLE_RATE = 3
 POSE_LANDMARKER_MAX_FRAMES = None
 
 ## Landmark Classifier path
-LANDMARK_CLASSIFIER_PATH = 'classifier.keras'
+LANDMARK_CLASSIFIER_PATH = 'classifier-8.keras'

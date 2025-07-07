@@ -7,7 +7,7 @@ from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from src.s3_utils import video_capture_from_bytes, S3Connection
-from src.pose_utils import LandmarkExtractor, normalize_flatten_landmarks
+from src.pose_utils import LandmarkExtractor, normalize_flatten_landmarks, convert_to_cosine_angles
 from src.classifier import SequenceClassifier
 from configs import (
   POSE_LANDMARKER_PATH, POSE_LANDMARKER_SAMPLE_RATE, POSE_LANDMARKER_MAX_FRAMES,
@@ -55,9 +55,11 @@ def detect_exercise(request: HttpRequest) -> JsonResponse:
     # Extract landmarks from the video
     landmarks = extractor.extract(cap)
     # Normalize and flatten the landmarks
-    landmarks = normalize_flatten_landmarks(landmarks).reshape(-1, 96)
+    # input_ = normalize_flatten_landmarks(landmarks).reshape(-1, 96)
+    # Convert landmarks to cosine angles
+    input_ = convert_to_cosine_angles(landmarks)
     # Create tensor input for the classifier
-    tensor_input = tf.convert_to_tensor(landmarks, dtype=tf.float32)[tf.newaxis, ...]
+    tensor_input = tf.convert_to_tensor(input_, dtype=tf.float32)[tf.newaxis, ...]
     # Predict the exercise using the classifier
     predicted_class = classifier.predict(tensor_input)[0]
     return JsonResponse({'predicted_class': predicted_class}, status=200)
