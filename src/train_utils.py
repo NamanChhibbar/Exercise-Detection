@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from .classifier import SequenceClassifier
 
 
-def create_datasets(
+def create_tf_datasets(
   x: list[np.ndarray],
   y: list[int],
   test_size: float = 0.2,
@@ -13,7 +13,7 @@ def create_datasets(
   seed: int | None = None
   ) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
   '''
-  Create train, validation, and test datasets from the given data.
+  Creates TensforFlow train, validation, and test datasets from the given data.
 
   Parameters:
     x (list[np.ndarray]): List of input data (landmarks).
@@ -32,12 +32,14 @@ def create_datasets(
   x_trainval, x_test, y_trainval, y_test = train_test_split(
     x, y,
     test_size=test_size,
+    stratify=y,
     random_state=seed
   )
   # Split into train and validation
   x_train, x_val, y_train, y_val = train_test_split(
     x_trainval, y_trainval,
     test_size=val_size,
+    stratify=y_trainval,
     random_state=seed
   )
   # Train dataset
