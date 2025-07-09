@@ -90,5 +90,5 @@ async def detect_exercise(body: DetectExerciseBody):
   except Exception as e:
     raise HTTPException(
       status_code=500,
-      detail=f'Error {str(e)} of type {type(e).__module__}.{type(e).__name__} occurred'
+      detail=f'Encountered error {e} of type {type(e).__module__}.{type(e).__name__}'
     )

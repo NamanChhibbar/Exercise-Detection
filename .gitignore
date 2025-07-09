@@ -5,6 +5,7 @@
 temp*
 *.pdf
 *.task
+test*
 
 # Pickle files
 *.pkl
