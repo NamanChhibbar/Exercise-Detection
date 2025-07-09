@@ -56,7 +56,10 @@ async def detect_exercise(body: DetectExerciseBody):
     cap.release()
     # Clean up the temporary file
     os.remove(tmp_name)
-    landmarks = convert_to_cosine_angles(landmarks)
+    # Get cosine angles from landmarks
+    angles = convert_to_cosine_angles(landmarks)
+    # Normalize landmarks
+    normalized_landmarks = 
     tensor_input = tf.convert_to_tensor(landmarks, dtype=tf.float32)[tf.newaxis, ...]
     predicted_class = classifier.predict(tensor_input)[0]
     return JSONResponse(content={'predicted_class': predicted_class}, status_code=200)

@@ -6,7 +6,7 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
 
 
-def normalize_flatten_landmarks(landmarks: np.ndarray) -> np.ndarray:
+def normalize_landmarks(landmarks: np.ndarray) -> np.ndarray:
   '''
   Normalizes landmarks about the nose and flattens them to make them suitable for input to a classifier.
 
