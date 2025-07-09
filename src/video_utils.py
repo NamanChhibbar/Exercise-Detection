@@ -22,7 +22,9 @@ def video_capture_from_bytes(video_bytes: bytes) -> cv2.VideoCapture:
     tmp.flush()
     # Create VideoCapture object
     cap = cv2.VideoCapture(tmp.name)
-  return cap
+    # Save the temporary file name to cleanup later
+    tmp_name = tmp.name
+  return cap, tmp_name
 
 
 class S3Connection:

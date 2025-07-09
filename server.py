@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import tensorflow as tf
 from pydantic import BaseModel
@@ -6,7 +8,7 @@ from fastapi.responses import JSONResponse
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-from src.s3_utils import video_capture_from_bytes, S3Connection
+from src.video_utils import video_capture_from_bytes, S3Connection
 from src.pose_utils import LandmarkExtractor, convert_to_cosine_angles
 from src.classifier import SequenceClassifier
 from src.repetitions_utils import max_variance_series, count_cycles
@@ -46,9 +48,14 @@ async def detect_exercise(body: DetectExerciseBody):
     video_bytes = s3_connection.fetch_video(bucket, key)
     if not video_bytes:
       raise HTTPException(status_code=404, detail='Video file not found')
-    # Process video and make prediction
-    cap = video_capture_from_bytes(video_bytes)
+    # Get video capture object and temporary file name
+    cap, tmp_name = video_capture_from_bytes(video_bytes)
+    # Extract landmarks from the video
     landmarks = extractor.extract(cap)
+    # Release the video capture object
+    cap.release()
+    # Clean up the temporary file
+    os.remove(tmp_name)
     landmarks = convert_to_cosine_angles(landmarks)
     tensor_input = tf.convert_to_tensor(landmarks, dtype=tf.float32)[tf.newaxis, ...]
     predicted_class = classifier.predict(tensor_input)[0]
