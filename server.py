@@ -1,6 +1,5 @@
 import os
 
-import cv2
 import tensorflow as tf
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -30,8 +29,7 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-s3_connection = None
-# s3_connection = S3Connection()
+s3_connection = S3Connection()
 extractor = LandmarkExtractor(
   model_path=POSE_LANDMARKER_PATH,
   sample_rate=POSE_LANDMARKER_SAMPLE_RATE,
@@ -72,39 +70,6 @@ async def detect_exercise(body: DetectExerciseBody):
     cap.release()
     # Clean up the temporary file
     os.remove(tmp_name)
-    # Get cosine angles from landmarks to count repetitions
-    angles = convert_to_cosine_angles(landmarks)
-    # Normalize and flatten landmarks
-    landmarks = normalize_landmarks(landmarks).resize(-1, 96)
-    # Create tensor input of shape (batch_size, sequence_length, num_features)
-    tensor_input = tf.convert_to_tensor(landmarks, dtype=tf.float32)[tf.newaxis, ...]
-    # Predict class using
-    predicted_class = classifier.predict(tensor_input)[0]
-    # Get max variance series
-    series = max_variance_series(angles)
-    # Count repetitions in the series
-    repetitions = count_cycles(series, frac=0.1)
-    return JSONResponse(
-      content={'predicted_class': predicted_class, 'repetitions': repetitions},
-      status_code=200
-    )
-  # General error handling
-  except Exception as e:
-    raise HTTPException(
-      status_code=500,
-      detail=f'Error {str(e)} of type {type(e).__module__}.{type(e).__name__} occurred'
-    )
-
-@app.post('/detect-exercise-local/')
-async def detect_exercise(body: DetectExerciseLocalBody):
-  file_location = body.file_location
-  try:
-    # Get video capture object and temporary file name
-    cap =cv2.VideoCapture(file_location)
-    # Extract landmarks from the video
-    landmarks = extractor.extract(cap)
-    # Release the video capture object
-    cap.release()
     # Get cosine angles from landmarks to count repetitions
     angles = convert_to_cosine_angles(landmarks)
     # Normalize and flatten landmarks
