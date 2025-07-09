@@ -5,7 +5,7 @@ import cv2
 import boto3
 
 
-def video_capture_from_bytes(video_bytes: bytes) -> cv2.VideoCapture:
+def video_capture_from_bytes(video_bytes: bytes) -> tuple[cv2.VideoCapture, str]:
   '''
   Creates a cv2.VideoCapture object from raw video bytes.
   Writes the video bytes to a temporary file and returns a VideoCapture object for that file.
