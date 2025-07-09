@@ -72,7 +72,7 @@ def train_evaluate(
   early_stopping_patience: int = 5
 ) -> tuple[dict, float, float]:
   '''
-  Trains and evaluates the given model on the provided datasets.
+  Trains and evaluates the given model on the provided datasets with AdamW optimizer and ReduceLROnPlateau scheduler.
 
   Parameters:
     model (LandmarkClassifier): The model to train.
