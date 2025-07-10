@@ -21,9 +21,6 @@ class DetectExerciseBody(BaseModel):
   bucket: str
   key: str
 
-class DetectExerciseLocalBody(BaseModel):
-  file_location: str
-
 # Load environment variables
 load_dotenv()
 # Initialize FastAPI app
