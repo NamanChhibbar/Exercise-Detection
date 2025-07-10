@@ -89,3 +89,10 @@ async def detect_exercise(body: DetectExerciseBody):
       status_code=500,
       detail=f'Encountered error {e} of type {type(e).__module__}.{type(e).__name__}'
     )
+  finally:
+    # Ensure the video capture object is released
+    if 'cap' in locals() and cap.isOpened():
+      cap.release()
+    # Ensure the temporary file is cleaned up
+    if 'tmp_name' in locals() and os.path.exists(tmp_name):
+      os.remove(tmp_name)
