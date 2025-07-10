@@ -1,5 +1,6 @@
-import os
+import io
 
+import imageio.v3 as iio
 import tensorflow as tf
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -7,7 +8,7 @@ from fastapi.responses import JSONResponse
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-from src.video_utils import video_capture_from_bytes, S3Connection
+from src.video_utils import S3Connection
 from src.pose_utils import LandmarkExtractor, normalize_landmarks, convert_to_cosine_angles
 from src.classifier import SequenceClassifier
 from src.repetitions_utils import max_variance_series, count_cycles
@@ -59,14 +60,19 @@ async def detect_exercise(body: DetectExerciseBody):
   if not video_bytes:
     raise HTTPException(status_code=404, detail='No video data found')
   try:
-    # Get video capture object and temporary file name
-    cap, tmp_name = video_capture_from_bytes(video_bytes)
+    # Create video bytes buffer
+    buffer = io.BytesIO(video_bytes)
+    # Create imageio reader from the buffer
+    reader = iio.imopen(buffer, io_mode='r', plugin='pyav')
+    # Get frames per second from the video metadata
+    fps = reader.metadata()['fps']
+    # Get iterator for frames
+    frames = reader.iter()
     # Extract landmarks from the video
-    landmarks = extractor.extract(cap)
-    # Release the video capture object
-    cap.release()
-    # Clean up the temporary file
-    os.remove(tmp_name)
+    landmarks = extractor.extract(frames, fps)
+    # Close the reader and buffer
+    reader.close()
+    buffer.close()
     # Get cosine angles from landmarks to count repetitions
     angles = convert_to_cosine_angles(landmarks)
     # Normalize and flatten landmarks
@@ -90,9 +96,9 @@ async def detect_exercise(body: DetectExerciseBody):
       detail=f'Encountered error {e} of type {type(e).__module__}.{type(e).__name__}'
     )
   finally:
-    # Ensure the video capture object is released
-    if 'cap' in locals() and cap.isOpened():
-      cap.release()
-    # Ensure the temporary file is cleaned up
-    if 'tmp_name' in locals() and os.path.exists(tmp_name):
-      os.remove(tmp_name)
+    # Ensure the reader is closed
+    if 'reader' in locals():
+      reader.close()
+    # Ensure the buffer is closed
+    if 'buffer' in locals():
+      buffer.close()

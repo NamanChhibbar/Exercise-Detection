@@ -1,5 +1,6 @@
+from typing import Iterable
+
 import numpy as np
-import cv2
 import mediapipe as mp
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks.python import BaseOptions
@@ -120,53 +121,43 @@ class LandmarkExtractor:
       running_mode=RunningMode.VIDEO
     )
 
-  def extract(self, cap: cv2.VideoCapture) -> np.ndarray:
+  def extract(self, frames: Iterable[np.ndarray], fps: float) -> np.ndarray:
     '''
-    Extracts pose landmarks from a video file using OpenCV VideoCapture.
+    Extracts pose landmarks from the given frames.
 
     Parameters:
-      cap (cv2.VideoCapture): OpenCV VideoCapture object for the video file.
+      frames (Iterable[np.ndarray]): Iterable of frames from the video file.
+      fps (float): Frames per second of the video file.
 
     Returns:
       np.ndarray: A 3D array of shape (num_frames, 33, 3) containing x, y, z coordinates of the landmarks.
     '''
-    # Check if the VideoCapture object is opened
-    if not cap.isOpened():
-      raise ValueError('VideoCapture object is closed.')
     # Get frame duration in microseconds
-    frame_duration = int(1_000_000 / cap.get(cv2.CAP_PROP_FPS))
+    frame_duration = int(1_000_000 / fps)
     frame_timestamp = 0
     frame_count = 0
     frames_extracted = 0
     landmarks_list = []
-    try:
-      while cap.isOpened():
-        # Read a frame
-        success, frame = cap.read()
-        # Break if no frame is read or max frames are extracted
-        if not success or frames_extracted == self.max_frames:
-          break
-        frame_count += 1
-        # Extract landmarks at specified frame rate
-        if frame_count % self.sample_rate == 0:
-          # Convert the frame to RGB format
-          mp_frame = mp.Image(
-            image_format=mp.ImageFormat.SRGB,
-            data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-          )
-          # Extract landmarks
-          with PoseLandmarker.create_from_options(self.options) as landmarker:
-            results = landmarker.detect_for_video(mp_frame, frame_timestamp)
-          if results.pose_landmarks:
-            # Flatten the landmarks
-            landmarks = np.array([
-              [landmark.x, landmark.y, landmark.z]
-              for landmark in results.pose_landmarks[0]
-            ])
-            landmarks_list.append(landmarks)
-            frames_extracted += 1
-        frame_timestamp += frame_duration
-    finally:
-      # Release the video capture object
-      cap.release()
+    for frame in frames:
+      # Break if no frame is read or max frames are extracted
+      if frames_extracted == self.max_frames:
+        break
+      frame_count += 1
+      # Skip frames based on the sample rate
+      if frame_count % self.sample_rate > 0:
+        continue
+      # Convert the frame to RGB format
+      mp_frame = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+      # Extract landmarks
+      with PoseLandmarker.create_from_options(self.options) as landmarker:
+        results = landmarker.detect_for_video(mp_frame, frame_timestamp)
+      if results.pose_landmarks:
+        # Extract landmarks in the form of a 3D array
+        landmarks = np.array([
+          [landmark.x, landmark.y, landmark.z]
+          for landmark in results.pose_landmarks[0]
+        ])
+        landmarks_list.append(landmarks)
+        frames_extracted += 1
+      frame_timestamp += frame_duration
     return np.array(landmarks_list)

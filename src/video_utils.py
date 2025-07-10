@@ -1,30 +1,6 @@
 import os
-import tempfile
 
-import cv2
 import boto3
-
-
-def video_capture_from_bytes(video_bytes: bytes) -> tuple[cv2.VideoCapture, str]:
-  '''
-  Creates a cv2.VideoCapture object from raw video bytes.
-  Writes the video bytes to a temporary file and returns a VideoCapture object for that file.
-
-  Parameters:
-    video_bytes (bytes): Raw bytes of the video file.
-
-  Returns:
-    cv2.VideoCapture: A VideoCapture object that can be used to read the video frames
-  '''
-  with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp:
-    # Write to a temporary file
-    tmp.write(video_bytes)
-    tmp.flush()
-    # Create VideoCapture object
-    cap = cv2.VideoCapture(tmp.name)
-    # Save the temporary file name to cleanup later
-    tmp_name = tmp.name
-  return cap, tmp_name
 
 
 class S3Connection:
