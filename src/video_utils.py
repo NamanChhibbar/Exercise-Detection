@@ -1,6 +1,45 @@
 import os
+import io
 
+import numpy as np
+import imageio.v3 as iio
 import boto3
+
+from .pose_utils import LandmarkExtractor
+
+
+def landmarks_from_video_bytes(video_bytes: bytes, extractor: LandmarkExtractor) -> np.ndarray:
+  '''
+  Extracts pose landmarks from video bytes.
+
+  Parameters:
+    video_bytes (bytes): Raw bytes of the video file.
+    extractor (LandmarkExtractor): Instance of LandmarkExtractor to extract landmarks.
+
+  Returns:
+    np.ndarray: Extracted pose landmarks.
+  '''
+  try:
+    # Create video bytes buffer
+    buffer = io.BytesIO(video_bytes)
+    # Create imageio reader from the buffer
+    reader = iio.imopen(buffer, io_mode='r', plugin='pyav')
+    # Get frames per second from the video metadata
+    fps = reader.metadata()['fps']
+    # Get iterator for frames
+    frames = reader.iter()
+    # Extract landmarks from the video
+    landmarks = extractor.extract(frames, fps)
+    # Close the reader and buffer
+    reader.close()
+    buffer.close()
+  finally:
+    # Ensure the reader and buffer are closed in case of an exception
+    if 'reader' in locals():
+      reader.close()
+    if 'buffer' in locals():
+      buffer.close()
+  return landmarks
 
 
 class S3Connection:
