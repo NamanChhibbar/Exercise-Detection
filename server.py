@@ -1,6 +1,6 @@
 import tensorflow as tf
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
@@ -43,14 +43,23 @@ async def detect_exercise(body: DetectExerciseBody):
   except ClientError as e:
     match e.response['Error']['Code']:
       case 'NoSuchBucket':
-        raise HTTPException(status_code=404, detail='Bucket does not exist')
+        raise HTTPException(
+          status_code=status.HTTP_404_NOT_FOUND,
+          detail='Bucket does not exist'
+        )
       case 'NoSuchKey':
-        raise HTTPException(status_code=404, detail='Video file does not exist')
+        raise HTTPException(
+          status_code=status.HTTP_404_NOT_FOUND,
+          detail='Video file does not exist'
+        )
       case 'AccessDenied':
-        raise HTTPException(status_code=403, detail='Access denied to the bucket or key')
+        raise HTTPException(
+          status_code=status.HTTP_403_FORBIDDEN,
+          detail='Access denied to the bucket or key'
+        )
       case _:
         raise HTTPException(
-          status_code=500,
+          status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
           detail=f'Error {str(e)} of type {type(e).__module__}.{type(e).__name__} occurred while accessing S3'
         )
   # If no video bytes are returned, raise a 404 error
@@ -73,11 +82,11 @@ async def detect_exercise(body: DetectExerciseBody):
     repetitions = count_cycles(series, frac=0.1)
     return JSONResponse(
       content={'predicted_class': predicted_class, 'repetitions': repetitions},
-      status_code=200
+      status_code=status.HTTP_200_OK
     )
   # General error handling
   except Exception as e:
     raise HTTPException(
-      status_code=500,
+      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
       detail=f'Encountered error {e} of type {type(e).__module__}.{type(e).__name__}'
     )
