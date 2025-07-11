@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
+
 def max_variance_series(array_series: np.ndarray) -> np.ndarray:
   '''
   Returns the series with the maximum variance from an array of series of shape (length_series, num_series).
