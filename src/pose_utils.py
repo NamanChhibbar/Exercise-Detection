@@ -2,7 +2,6 @@ from typing import Iterable
 
 import numpy as np
 import mediapipe as mp
-from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import PoseLandmarker, PoseLandmarkerOptions, RunningMode
 
@@ -69,25 +68,6 @@ def convert_to_cosine_angles(landmarks: np.ndarray) -> np.ndarray:
     frame_angles.append(get_cosine_angle(frame_landmarks[26], frame_landmarks[24], frame_landmarks[28]))
     angles.append(frame_angles)
   return np.array(angles)
-
-def draw_landmarks(rgb_image: np.ndarray, detection_result) -> np.ndarray:
-  pose_landmarks_list = detection_result.pose_landmarks
-  annotated_image = np.copy(rgb_image)
-  # Loop through the detected poses to visualize.
-  for pose_landmarks in pose_landmarks_list:
-    # Draw the pose landmarks.
-    pose_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-    pose_landmarks_proto.landmark.extend([
-      landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z)
-      for landmark in pose_landmarks
-    ])
-    mp.solutions.drawing_utils.draw_landmarks(
-      annotated_image,
-      pose_landmarks_proto,
-      mp.solutions.pose.POSE_CONNECTIONS,
-      mp.solutions.drawing_styles.get_default_pose_landmarks_style()
-    )
-  return annotated_image
 
 
 class LandmarkExtractor:
