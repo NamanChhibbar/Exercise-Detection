@@ -28,11 +28,11 @@ def minima_indices(series: np.ndarray) -> np.ndarray:
 
 def count_cycles(series: np.ndarray, frac: float = 0.1) -> int:
   '''
-  Counts the number of cycles (a minima and a maxima) in a series using the lowess smoothening.
+  Counts the number of cycles (a minima and a maxima) in a series using the lowess smoothing.
 
   Parameters:
     series (np.ndarray): The input series.
-    frac (float): The fraction of the data used for lowess smoothening.
+    frac (float): The fraction of the data used for lowess smoothing.
 
   Returns:
     int: The number of cycles detected.
