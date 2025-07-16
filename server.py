@@ -14,7 +14,7 @@ from configs import (
   CLASSIFIER_PATH, LOWESS_FRAC
 )
 
-class DetectExerciseBody(BaseModel):
+class RequestBody(BaseModel):
   '''Request body format for detect-exercise endpoint.'''
   bucket: str
   key: str
@@ -33,7 +33,7 @@ extractor = LandmarkExtractor(
 classifier = SequenceClassifier.load_model(model_path=CLASSIFIER_PATH)
 
 @app.post('/detect-exercise/')
-async def detect_exercise(body: DetectExerciseBody):
+async def detect_exercise(body: RequestBody):
   bucket = body.bucket
   key = body.key
   # Fetch video bytes from S3
