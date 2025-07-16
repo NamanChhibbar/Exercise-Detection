@@ -20,55 +20,6 @@ def normalize_landmarks(landmarks: np.ndarray) -> np.ndarray:
   normalized = landmarks[:, 1:] - landmarks[:, 0][:, np.newaxis]
   return normalized
 
-def get_cosine_angle(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
-  '''
-  Computes the cosine of the angle between the vectors (p2 - p1) and (p3 - p1), where p1, p2, and p3 are points in a space.
-
-  Parameters:
-    p1 (np.ndarray): First point.
-    p2 (np.ndarray): Second point.
-    p3 (np.ndarray): Third point.
-
-  Returns:
-    float: Cosine of the angle between the vectors (p2 - p1) and (p3 - p1).
-  '''
-  v1 = p2 - p1
-  v2 = p3 - p1
-  cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-  return cos_angle
-
-def convert_to_cosine_angles(landmarks: np.ndarray) -> np.ndarray:
-  '''
-  Converts the landmarks to cosine of angles made by the left and right shoulders, elbows, hips, and knees.
-
-  Parameters:
-    landmarks (np.ndarray): Landmarks of shape (num_frames, 33, 3).
-
-  Returns:
-    np.ndarray: Cosine of angles of the shape (num_frames, 8).
-  '''
-  angles = []
-  for frame_landmarks in landmarks:
-    frame_angles = []
-    # Left shoulder angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[11], frame_landmarks[13], frame_landmarks[23]))
-    # Right shoulder angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[12], frame_landmarks[14], frame_landmarks[24]))
-    # Left elbow angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[13], frame_landmarks[11], frame_landmarks[15]))
-    # Right elbow angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[14], frame_landmarks[12], frame_landmarks[16]))
-    # Left hip angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[23], frame_landmarks[11], frame_landmarks[25]))
-    # Right hip angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[24], frame_landmarks[12], frame_landmarks[26]))
-    # Left knee angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[25], frame_landmarks[23], frame_landmarks[27]))
-    # Right knee angle
-    frame_angles.append(get_cosine_angle(frame_landmarks[26], frame_landmarks[24], frame_landmarks[28]))
-    angles.append(frame_angles)
-  return np.array(angles)
-
 
 class LandmarkExtractor:
   '''

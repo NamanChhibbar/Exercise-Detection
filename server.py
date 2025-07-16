@@ -6,12 +6,12 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 from src.video_utils import S3Connection, landmarks_from_video_bytes
-from src.pose_utils import LandmarkExtractor, normalize_landmarks, convert_to_cosine_angles
+from src.pose_utils import LandmarkExtractor, normalize_landmarks
 from src.classifier import SequenceClassifier
 from src.repetitions_utils import max_variance_series, count_cycles
 from configs import (
-  POSE_LANDMARKER_PATH, POSE_LANDMARKER_SAMPLE_RATE, POSE_LANDMARKER_MAX_FRAMES,
-  LANDMARK_CLASSIFIER_PATH
+  POSE_LANDMARKER_PATH, EXTRACTOR_SAMPLE_RATE, EXTRACTOR_MAX_FRAMES,
+  CLASSIFIER_PATH
 )
 
 class DetectExerciseBody(BaseModel):
@@ -27,10 +27,10 @@ app = FastAPI()
 s3_connection = S3Connection()
 extractor = LandmarkExtractor(
   model_path=POSE_LANDMARKER_PATH,
-  sample_rate=POSE_LANDMARKER_SAMPLE_RATE,
-  max_frames=POSE_LANDMARKER_MAX_FRAMES
+  sample_rate=EXTRACTOR_SAMPLE_RATE,
+  max_frames=EXTRACTOR_MAX_FRAMES
 )
-classifier = SequenceClassifier.load_model(model_path=LANDMARK_CLASSIFIER_PATH)
+classifier = SequenceClassifier.load_model(model_path=CLASSIFIER_PATH)
 
 @app.post('/detect-exercise/')
 async def detect_exercise(body: DetectExerciseBody):
@@ -68,18 +68,18 @@ async def detect_exercise(body: DetectExerciseBody):
   try:
     # Get landmarks from video bytes
     landmarks = landmarks_from_video_bytes(video_bytes, extractor)
-    # Get cosine angles from landmarks to count repetitions
-    angles = convert_to_cosine_angles(landmarks)
-    # Normalize and flatten landmarks
-    landmarks = normalize_landmarks(landmarks).resize(-1, 96)
-    # Create tensor input of shape (batch_size, sequence_length, num_features)
+    # Normalize landmarks
+    landmarks = normalize_landmarks(landmarks)
+    # Get max variance series of y coordinates
+    series = max_variance_series(landmarks[..., 1])
+    # Count repetitions in the series
+    repetitions = count_cycles(series, frac=0.1)
+    # Flatten landmarks
+    landmarks = landmarks.reshape(-1, 96)
+    # Create tensor input of shape (batch_size=1, sequence_length, num_features)
     tensor_input = tf.convert_to_tensor(landmarks, dtype=tf.float32)[tf.newaxis, ...]
     # Predict class using
     predicted_class = classifier.predict(tensor_input)[0]
-    # Get max variance series
-    series = max_variance_series(angles)
-    # Count repetitions in the series
-    repetitions = count_cycles(series, frac=0.1)
     return JSONResponse(
       content={'predicted_class': predicted_class, 'repetitions': repetitions},
       status_code=status.HTTP_200_OK
