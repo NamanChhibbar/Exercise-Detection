@@ -77,6 +77,9 @@ class LandmarkExtractor:
       # Skip frames based on the sample rate
       if frame_count % self.sample_rate:
         continue
+      # Ensure the frame is contiguous for mediapipe processing
+      if not frame.flags['C_CONTIGUOUS']:
+        frame = np.ascontiguousarray(frame)
       # Convert the frame to mediapipe Image format
       mp_frame = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
       # Extract landmarks
