@@ -11,7 +11,7 @@ from src.classifier import SequenceClassifier
 from src.repetitions_utils import max_variance_series, count_cycles
 from configs import (
   POSE_LANDMARKER_PATH, EXTRACTOR_SAMPLE_RATE, EXTRACTOR_MAX_FRAMES,
-  CLASSIFIER_PATH
+  CLASSIFIER_PATH, LOWESS_FRAC
 )
 
 class DetectExerciseBody(BaseModel):
@@ -73,7 +73,7 @@ async def detect_exercise(body: DetectExerciseBody):
     # Get max variance series of y coordinates
     series = max_variance_series(landmarks[..., 1])
     # Count repetitions in the series
-    repetitions = count_cycles(series, frac=0.1)
+    repetitions = count_cycles(series, frac=LOWESS_FRAC)
     # Flatten landmarks
     landmarks = landmarks.reshape(-1, 96)
     # Create tensor input of shape (batch_size=1, sequence_length, num_features)

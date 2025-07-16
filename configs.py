@@ -1,8 +1,11 @@
-## Mediapipe Pose Landmarker path and configuration
+# Mediapipe Pose Landmarker path and extractor configurations
 POSE_LANDMARKER_PATH = 'pose_landmarker_full.task'
-POSE_LANDMARKER_SAMPLE_RATE = 3
+EXTRACTOR_SAMPLE_RATE = 3
 # All frames will be processed if set to None
-POSE_LANDMARKER_MAX_FRAMES = None
+EXTRACTOR_MAX_FRAMES = None
 
-## Landmark Classifier path
-LANDMARK_CLASSIFIER_PATH = 'classifier.keras'
+# Lowess smoothing fraction
+LOWESS_FRAC = 0.095
+
+# Classifier path
+CLASSIFIER_PATH = 'classifier.keras'
