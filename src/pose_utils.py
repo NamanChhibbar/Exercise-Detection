@@ -75,9 +75,9 @@ class LandmarkExtractor:
         break
       frame_count += 1
       # Skip frames based on the sample rate
-      if frame_count % self.sample_rate > 0:
+      if frame_count % self.sample_rate:
         continue
-      # Convert the frame to RGB format
+      # Convert the frame to mediapipe Image format
       mp_frame = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
       # Extract landmarks
       with PoseLandmarker.create_from_options(self.options) as landmarker:
