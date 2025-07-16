@@ -65,7 +65,7 @@ Update the model paths in [configs.py](configs.py) accordingly.
 Run your server using Uvicorn on the specified port number.
 
 ```sh
-uvicorn server:app --reload --port {port_number}
+uvicorn server:app --port {port_number}
 ```
 
 ## Endpoints
