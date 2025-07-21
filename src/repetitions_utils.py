@@ -16,28 +16,31 @@ def max_variance_series(array_series: np.ndarray) -> np.ndarray:
   index = np.argmax(np.var(array_series, axis=0))
   return array_series[:, index]
 
-def maxima_indices(series: np.ndarray) -> np.ndarray:
-  '''Finds the indices of local maxima in a series.'''
-  indices, _ = find_peaks(series)
-  return indices
+def extrema_indices(series: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+  '''
+  Finds the indices of local extremas (maximas and minimas) in a series.
 
-def minima_indices(series: np.ndarray) -> np.ndarray:
-  '''Finds the indices of local minima in a series.'''
-  indices, _ = find_peaks(-series)
-  return indices
+  Parameters:
+    series (np.ndarray): Input series.
+
+  Returns:
+    (np.ndarray, np.ndarray): Indices of maximas and minimas repectively.  
+  '''
+  maxima_indices, _ = find_peaks(series)
+  minima_indices, _ = find_peaks(-series)
+  return maxima_indices, minima_indices
 
 def count_cycles(series: np.ndarray, frac: float = 0.1) -> int:
   '''
   Counts the number of cycles (a minima and a maxima) in a series using the lowess smoothing.
 
   Parameters:
-    series (np.ndarray): The input series.
+    series (np.ndarray): Input series.
     frac (float): The fraction of the data used for lowess smoothing.
 
   Returns:
     int: The number of cycles detected.
   '''
-  smoothed_series = lowess(series, np.arange(len(series)), frac=frac, return_sorted=False)
-  maximas = maxima_indices(smoothed_series)
-  minimas = minima_indices(smoothed_series)
+  smooth_series = lowess(series, np.arange(len(series)), frac=frac, return_sorted=False)
+  maximas, minimas = extrema_indices(smooth_series)
   return min(len(maximas), len(minimas))
