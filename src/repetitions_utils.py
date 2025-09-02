@@ -41,6 +41,7 @@ def count_cycles(series: np.ndarray, frac: float = 0.1) -> int:
   Returns:
     int: The number of cycles detected.
   '''
-  smooth_series = lowess(series, np.arange(len(series)), frac=frac, return_sorted=False)
+  indices = np.arange(len(series))
+  smooth_series = lowess(series, indices, frac=frac, return_sorted=False)
   maximas, minimas = extrema_indices(smooth_series)
   return min(len(maximas), len(minimas))
